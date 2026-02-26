@@ -3,4 +3,4 @@ numpy
 streamlit
 plotly
 streamlit-authenticator
-altair
+altair<5
