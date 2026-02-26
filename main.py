@@ -416,13 +416,13 @@ if authentication_status:
         p1_250_time = df_p1["Time"][len(df_p1) - 2] + ((250 - df_p1["wheel_dist"][len(df_p1) - 2]) / df_p1["wheel_speed"][len(df_p1) - 2])
         st.write(f"Time to 250m is {round(p1_250_time, 3)}")
         # st.plotly_chart(px.line(df_p1, x="Time", y="lean"), use_container_width=True)
-        st.plotly_chart(power_speed_fig(df_p1, "P1"), use_container_width=True)
+        st.plotly_chart(power_speed_fig(df_p1, "P1"), width='stretch')
 
         st.header("p2 numbers")
         df_p2
         st.write(f"Time to 250m is {round(time_to(250, df_p2), 3)}")
         st.write(f"Time to 500m is {round(time_to(500, df_p2), 3)}")
-        st.plotly_chart(power_speed_fig(df_p2, "p2"), use_container_width=True)
+        st.plotly_chart(power_speed_fig(df_p2, "p2"), width='stretch')
 
         st.header("p3 numbers")
         df_p3
@@ -440,4 +440,4 @@ if authentication_status:
             yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0),
             title_text="Power and Wheel speed"
         )
-        st.plotly_chart(fig_all, use_container_width=True)
+        st.plotly_chart(fig_all, width='stretch')
