@@ -4,4 +4,4 @@ streamlit
 plotly
 streamlit-authenticator
 altair<5
-imghdr
+standard-imghdr
