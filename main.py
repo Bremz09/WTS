@@ -329,7 +329,7 @@ if authentication_status:
         df_p3 = make_df(p3d, extra_cols=('accel_demand', 'rr_demand', 'aero_demand', 'power_demand', 'dem_sup'))
 
         fig_dem_v_supp = px.line(df_p3, x="Time", y=[df_p3["dem_sup"], df_p3["COM_speed"], df_p3["gap"]])
-        st.plotly_chart(fig_dem_v_supp, use_container_width=True)
+        # st.plotly_chart(fig_dem_v_supp, use_container_width=True)
 
         # --- Summary ---
         st.header("Summary")
@@ -351,14 +351,14 @@ if authentication_status:
             df_time[str(d)] = [0, p2_qt[d], p3_qt[d]]
         for d in [562.5, 625, 687.5, 750]:
             df_time[str(d)] = [0, 0, p3_qt[d]]
-        df_time
+        st.dataframe(df_time, use_container_width=False)
 
         df_gap = pd.DataFrame([2, 3], columns=["Time_gap"])
         for d in dists_p1:
             df_gap[str(d)] = [p2_qt[d] - p1_qt[d], p3_qt[d] - p2_qt[d]]
         for d in [312.5, 375, 437.5, 500]:
             df_gap[str(d)] = [0, p3_qt[d] - p2_qt[d]]
-        df_gap
+        st.dataframe(df_gap, use_container_width=False)
 
         df_dist_gap = pd.DataFrame([2, 3], columns=["Dist_gap"])
         for d in dists_p1:
@@ -366,7 +366,7 @@ if authentication_status:
                                    round(intp(p2_qt[d], df_p3, 'Time', 'gap')[0], 2)]
         for d in [312.5, 375, 437.5, 500]:
             df_dist_gap[str(d)] = [0, round(intp(p2_qt[d], df_p3, 'Time', 'gap')[0], 2)]
-        df_dist_gap
+        st.dataframe(df_dist_gap, use_container_width=False)
 
         def make_summary_df(field, label):
             df_s = pd.DataFrame([1, 2, 3], columns=[label])
@@ -383,13 +383,13 @@ if authentication_status:
             return df_s
 
         df_cadence = make_summary_df('cadence', 'Cadence')
-        df_cadence
+        st.dataframe(df_cadence, use_container_width=False)
 
         df_wheel_speed = make_summary_df('wheel_speed', 'wheel_speed')
         df_wheel_speed = df_wheel_speed.apply(lambda x: x * 3.6)
         df_wheel_speed["wheel_speed"] = [1, 2, 3]
         st.write("Wheel speed in km/h")
-        df_wheel_speed
+        st.dataframe(df_wheel_speed, use_container_width=False)
 
         # --- Per-rider output ---
         def power_speed_fig(df_px, label):
@@ -398,7 +398,7 @@ if authentication_status:
             fig.add_trace(go.Line(x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
             fig.update_layout(
                 xaxis=dict(domain=[0.0, 1.0]),
-                yaxis=dict(title="Power (W)", titlefont=dict(color="#1f77b4"), tickfont=dict(color="#1f77b4")),
+                yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4")),
                 yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0),
                 title_text="Power and Wheel speed"
             )
@@ -412,7 +412,7 @@ if authentication_status:
         df_p1
         p1_250_time = df_p1["Time"][len(df_p1) - 2] + ((250 - df_p1["wheel_dist"][len(df_p1) - 2]) / df_p1["wheel_speed"][len(df_p1) - 2])
         st.write(f"Time to 250m is {round(p1_250_time, 3)}")
-        st.plotly_chart(px.line(df_p1, x="Time", y="lean"), use_container_width=True)
+        # st.plotly_chart(px.line(df_p1, x="Time", y="lean"), use_container_width=True)
         st.plotly_chart(power_speed_fig(df_p1, "P1"), use_container_width=True)
 
         st.header("p2 numbers")
@@ -433,7 +433,7 @@ if authentication_status:
             fig_all.add_trace(go.Line(x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
         fig_all.update_layout(
             xaxis=dict(domain=[0.0, 1.0]),
-            yaxis=dict(title="Power (W)", titlefont=dict(color="#1f77b4"), tickfont=dict(color="#1f77b4")),
+            yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4")),
             yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0),
             title_text="Power and Wheel speed"
         )
