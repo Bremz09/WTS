@@ -394,8 +394,8 @@ if authentication_status:
         # --- Per-rider output ---
         def power_speed_fig(df_px, label):
             fig = go.Figure()
-            fig.add_trace(go.Line(x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
-            fig.add_trace(go.Line(x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
+            fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
+            fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
             fig.update_layout(
                 xaxis=dict(domain=[0.0, 1.0]),
                 yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4")),
@@ -429,8 +429,8 @@ if authentication_status:
 
         fig_all = go.Figure()
         for df_px, label in [(df_p1, "p1"), (df_p2, "p2"), (df_p3, "p3")]:
-            fig_all.add_trace(go.Line(x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
-            fig_all.add_trace(go.Line(x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
+            fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
+            fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
         fig_all.update_layout(
             xaxis=dict(domain=[0.0, 1.0]),
             yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4")),
