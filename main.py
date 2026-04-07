@@ -9,8 +9,166 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit_authenticator as stauth
 from statistics import mean
+import os
 
 st.set_page_config(page_title='CNZ Performance Database', page_icon=":bike:", layout="wide")
+
+
+def _inject_css():
+    parts = []
+    for path in ("assets/base.css", "assets/shell.css"):
+        if os.path.exists(path):
+            with open(path) as f:
+                parts.append(f.read())
+    parts.append("""
+/* ── Streamlit bridge ── */
+.stApp {
+    background-color: var(--color-surface-alt) !important;
+    font-family: "Arial", "Helvetica Neue", "Helvetica", sans-serif !important;
+}
+[data-testid="stHeader"] { background: var(--color-nav-bg) !important; }
+h1, h2, h3 {
+    font-family: "Arial", "Helvetica Neue", "Helvetica", sans-serif;
+    color: var(--color-text-primary) !important;
+}
+.result-section-title {
+    color: var(--color-text-primary) !important;
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+}
+.stButton > button {
+    background-color: var(--color-accent) !important;
+    color: #fff !important;
+    font-family: Arial, sans-serif !important;
+    font-size: 0.875rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 10px 20px !important;
+    min-height: 44px !important;
+    transition: all 150ms ease !important;
+}
+.stButton > button:hover {
+    background-color: var(--color-accent-hover) !important;
+    box-shadow: 0 4px 12px rgba(219,107,48,0.35) !important;
+}
+[data-testid="stForm"] {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+[data-baseweb="input"] > div {
+    border-color: var(--color-border) !important;
+    border-radius: 6px !important;
+}
+[data-baseweb="input"]:focus-within > div {
+    border-color: #DB6B30 !important;
+    box-shadow: 0 0 0 3px rgba(219,107,48,0.15) !important;
+}
+[data-baseweb="select"] > div {
+    border-color: var(--color-border) !important;
+    border-radius: 6px !important;
+}
+/* ── Font overrides for interactive widgets ── */
+[data-baseweb="select"] *,
+[data-baseweb="select"] input,
+[data-baseweb="menu"] *,
+[data-baseweb="option"],
+[data-baseweb="tag"] span,
+[data-baseweb="tag"] *,
+[data-testid="stMultiSelect"] *,
+[data-testid="stSelectbox"] *,
+[data-testid="stNumberInput"] *,
+[data-testid="stTextInput"] *,
+[data-testid="stDateInput"] *,
+[data-testid="stSlider"] *,
+label, .stMarkdown p, .stText, .stCaption,
+div[data-testid="stForm"] label {
+    font-family: "Arial", "Helvetica Neue", "Helvetica", sans-serif !important;
+    font-size: 0.875rem !important;
+}
+/* ── Dropdown portal (rendered at body level) ── */
+[data-baseweb="popover"],
+[data-baseweb="popover"] *,
+[data-baseweb="menu"],
+[data-baseweb="menu"] *,
+[data-baseweb="menu-item"],
+[data-baseweb="menu-item"] *,
+ul[data-baseweb="menu"],
+li[role="option"],
+li[role="option"] *,
+[role="listbox"],
+[role="listbox"] *,
+[role="option"],
+[role="option"] * {
+    font-family: "Arial", "Helvetica Neue", "Helvetica", sans-serif !important;
+    font-size: 0.875rem !important;
+    color: var(--color-text-primary) !important;
+}
+[data-baseweb="popover"] {
+    background: #ffffff !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important;
+}
+[data-baseweb="tag"] {
+    background-color: rgba(219,107,48,0.12) !important;
+    border: 1px solid rgba(219,107,48,0.4) !important;
+    border-radius: 4px !important;
+}
+[data-baseweb="tag"] span {
+    color: var(--color-text-primary) !important;
+}
+[data-baseweb="option"]:hover {
+    background-color: rgba(219,107,48,0.08) !important;
+}
+[data-baseweb="option"][aria-selected="true"] {
+    background-color: rgba(219,107,48,0.15) !important;
+}
+[data-testid="stMultiSelect"] label,
+[data-testid="stSelectbox"] label,
+[data-testid="stNumberInput"] label {
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    color: var(--color-text-muted) !important;
+}
+[data-testid="stPlotlyChart"] {
+    border: 1px solid var(--color-border) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    background: var(--color-surface-alt) !important;
+}
+[data-testid="stDataFrame"] {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: var(--color-surface) !important;
+    /* glide-data-grid canvas theme tokens */
+    --gdg-bg-cell: #ffffff;
+    --gdg-bg-cell-medium: #f7f7f7;
+    --gdg-bg-header: #f7f7f7;
+    --gdg-bg-header-has-focus: #f0f0f0;
+    --gdg-bg-header-hovered: #eeeeee;
+    --gdg-text-dark: #000000;
+    --gdg-text-medium: #333333;
+    --gdg-text-light: #666666;
+    --gdg-text-header: #000000;
+    --gdg-text-header-selected: #000000;
+    --gdg-border-color: #e0e0e0;
+    --gdg-horizontal-border-color: #e0e0e0;
+}
+#MainMenu, footer { visibility: hidden; }
+""")
+    st.markdown(f"<style>{''.join(parts)}</style>", unsafe_allow_html=True)
+
+
+_inject_css()
 
 with open("hashed_pw.pkl", "rb") as file:
     hashed_passwords = pickle.load(file)
@@ -28,7 +186,7 @@ if authentication_status == False:
 if authentication_status == None:
     st.warning("Please enter your username and password")
 if authentication_status:
-    st.header('Modelling Tool')
+    st.markdown('<h2 class="result-section-title">Modelling Tool</h2>', unsafe_allow_html=True)
     update = datetime.date.today() + pd.DateOffset(hour=12)
 
     def intp(xval, df, xcol, ycol):
@@ -54,7 +212,7 @@ if authentication_status:
             rider_defaults = [SHAANE, PETCH, ELLESSE]
 
         def rider_inputs(name, kn, d):
-            st.subheader(f"{name} specs")
+            st.markdown(f'<div class="section-divider">{name} specs</div>', unsafe_allow_html=True)
             c1, c2, c3, c4, c5, c6 = st.columns(6)
             v = [
                 c1.number_input("Seated Max RPM:",    min_value=0.01, max_value=500.0,  value=float(d[0]), key=f"{kn}_1"),
@@ -73,25 +231,23 @@ if authentication_status:
             ]
             return v
 
+        with st.sidebar:
+            st.markdown('<p class="sidebar-params-title">Global specs</p>', unsafe_allow_html=True)
+            air_density           = st.number_input("Air Density:",             min_value=0.001, max_value=3.2,   value=1.168, step=1e-3, format="%.3f", key="4_1")
+            dist_at_sit           = st.number_input("Distance at sit:",         min_value=0.01,  max_value=750.0, value=150.0, step=0.1,  format="%.1f", key="4_2")
+            standing_fatigue_rate = st.number_input("Standing Fatigue Rate (%):",min_value=0.01, max_value=99.99, value=1.0,   step=1e-2, format="%.2f", key="4_3")
+            seated_fatigue_rate   = st.number_input("Seated Fatigue Rate (%):", min_value=0.01,  max_value=99.99, value=1.0,   step=1e-2, format="%.2f", key="4_4")
+            fatigue_onset         = st.number_input("Onset of Fatigue (s):",    min_value=0.1,   max_value=2.0,   value=1.0,   step=0.1,  format="%.1f", key="4_5")
+            track_circumference   = st.selectbox("Track Circumference:",        [250, 333, 500],                              key="Track_circumference")
+            straight_bank_angle   = st.number_input("Straight Bank Angle:",     min_value=0.0, max_value=90.0, value=13.00)
+            bend_bank_angle       = st.number_input("Bend Bank Angle:",         min_value=0.0, max_value=90.0, value=46.13)
+            pl_to_trans           = st.number_input("Distance from Pursuit Line to Transition:", min_value=0.0, max_value=90.0, value=31.25)
+            transition_length     = st.number_input("Transition length:",       min_value=0.0, max_value=90.0, value=10.00)
+
         with st.form("my_form"):
             r1 = rider_inputs(rider_names[0], "1", rider_defaults[0])
             r2 = rider_inputs(rider_names[1], "2", rider_defaults[1])
             r3 = rider_inputs(rider_names[2], "3", rider_defaults[2])
-
-            st.subheader("Global specs")
-            c1, c2, c3, c4, c5 = st.columns(5)
-            air_density           = c1.number_input("Air Density:",             min_value=0.001, max_value=3.2,   value=1.168, step=1e-3, format="%.3f", key="4_1")
-            dist_at_sit           = c2.number_input("Distance at sit:",         min_value=0.01,  max_value=750.0, value=150.0, step=0.1,  format="%.1f", key="4_2")
-            standing_fatigue_rate = c3.number_input("Standing Fatigue Rate (%):",min_value=0.01, max_value=99.99, value=1.0,   step=1e-2, format="%.2f", key="4_3")
-            seated_fatigue_rate   = c4.number_input("Seated Fatigue Rate (%):", min_value=0.01,  max_value=99.99, value=1.0,   step=1e-2, format="%.2f", key="4_4")
-            fatigue_onset         = c5.number_input("Onset of Fatigue (s):",    min_value=0.1,   max_value=2.0,   value=1.0,   step=0.1,  format="%.1f", key="4_5")
-
-            c1, c2, c3, c4, c5 = st.columns(5)
-            track_circumference = c1.selectbox("Track Circumference:", [250, 333, 500], key="Track_circumference")
-            straight_bank_angle = c2.number_input("Straight Bank Angle:",                   min_value=0.0, max_value=90.0, value=13.00)
-            bend_bank_angle     = c3.number_input("Bend Bank Angle:",                       min_value=0.0, max_value=90.0, value=46.13)
-            pl_to_trans         = c4.number_input("Distance from Pursuit Line to Transition:", min_value=0.0, max_value=90.0, value=31.25)
-            transition_length   = c5.number_input("Transition length:",                     min_value=0.0, max_value=90.0, value=10.00)
             submitted = st.form_submit_button("Update Specs")
 
         (seat_max_RPM_1, seat_max_torque_1, seat_CdA_1, stand_max_RPM_1, stand_max_torque_1, stand_CdA_1, total_mass_1, sprocket_1, chainring_1, seat_height_1) = r1
@@ -144,7 +300,7 @@ if authentication_status:
         p2 = make_athlete(seat_max_RPM_2, seat_max_torque_2, stand_max_RPM_2, stand_max_torque_2, stand_CdA_2, seat_CdA_2, total_mass_2, chainring_2, sprocket_2, seat_height_2)
         p3 = make_athlete(seat_max_RPM_3, seat_max_torque_3, stand_max_RPM_3, stand_max_torque_3, stand_CdA_3, seat_CdA_3, total_mass_3, chainring_3, sprocket_3, seat_height_3)
 
-        for rider, spd in ((p1, 1.8), (p2, 1.6), (p3, 1.6)):
+        for rider, spd in ((p1, 2), (p2, 2), (p3, 1.6)):
             rider.initialize_state(spd, straight_bank_angle, rad_of_curve, air_density, mu_rr, ks, efficiency, bike_length)
 
         # --- Track geometry ---
@@ -335,7 +491,7 @@ if authentication_status:
         # st.plotly_chart(fig_dem_v_supp, use_container_width=True)
 
         # --- Summary ---
-        st.header("Summary")
+        st.markdown('<h2 class="result-section-title">Summary</h2>', unsafe_allow_html=True)
         dists_p1 = [62.5, 125, 187.5, 250]
         dists_p2 = dists_p1 + [312.5, 375, 437.5, 500]
         dists_p3 = dists_p2 + [562.5, 625, 687.5, 750]
@@ -400,9 +556,12 @@ if authentication_status:
             fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
             fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
             fig.update_layout(
-                xaxis=dict(domain=[0.0, 1.0]),
-                yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4")),
-                yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0),
+                paper_bgcolor="#f7f7f7",
+                plot_bgcolor="#f7f7f7",
+                font=dict(color="#000000", family="Arial, sans-serif"),
+                xaxis=dict(domain=[0.0, 1.0], gridcolor="#e0e0e0"),
+                yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4"), gridcolor="#e0e0e0"),
+                yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0, gridcolor="#e0e0e0"),
                 title_text="Power and Wheel speed"
             )
             return fig
@@ -411,20 +570,20 @@ if authentication_status:
             row = df_px.iloc[(df_px['wheel_dist'] - dist).abs().argsort()[:2]].reset_index(drop=True)
             return row["Time"][1] + (dist - row["wheel_dist"][1]) / row["wheel_speed"][1]
 
-        st.header("P1 numbers")
+        st.markdown('<h2 class="result-section-title">P1 numbers</h2>', unsafe_allow_html=True)
         df_p1
         p1_250_time = df_p1["Time"][len(df_p1) - 2] + ((250 - df_p1["wheel_dist"][len(df_p1) - 2]) / df_p1["wheel_speed"][len(df_p1) - 2])
         st.write(f"Time to 250m is {round(p1_250_time, 3)}")
         # st.plotly_chart(px.line(df_p1, x="Time", y="lean"), use_container_width=True)
         st.plotly_chart(power_speed_fig(df_p1, "P1"), width='stretch')
 
-        st.header("p2 numbers")
+        st.markdown('<h2 class="result-section-title">P2 numbers</h2>', unsafe_allow_html=True)
         df_p2
         st.write(f"Time to 250m is {round(time_to(250, df_p2), 3)}")
         st.write(f"Time to 500m is {round(time_to(500, df_p2), 3)}")
         st.plotly_chart(power_speed_fig(df_p2, "p2"), width='stretch')
 
-        st.header("p3 numbers")
+        st.markdown('<h2 class="result-section-title">P3 numbers</h2>', unsafe_allow_html=True)
         df_p3
         st.write(f"Time to 250m is {round(time_to(250, df_p3), 3)}")
         st.write(f"Time to 500m is {round(time_to(500, df_p3), 3)}")
@@ -435,9 +594,12 @@ if authentication_status:
             fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
             fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
         fig_all.update_layout(
-            xaxis=dict(domain=[0.0, 1.0]),
-            yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4")),
-            yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0),
+            paper_bgcolor="#f7f7f7",
+            plot_bgcolor="#f7f7f7",
+            font=dict(color="#000000", family="Arial, sans-serif"),
+            xaxis=dict(domain=[0.0, 1.0], gridcolor="#e0e0e0"),
+            yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4"), gridcolor="#e0e0e0"),
+            yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0, gridcolor="#e0e0e0"),
             title_text="Power and Wheel speed"
         )
         st.plotly_chart(fig_all, width='stretch')

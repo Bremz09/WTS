@@ -1,0 +1,353 @@
+/* ── App Shell: Sidebar + Top Bar ── */
+
+/* ── Shell wrapper ── */
+.shell-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 256px;
+  min-height: 100vh;
+  background: var(--color-nav-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 50;
+  overflow-y: auto;
+}
+.sidebar-logo {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-logo-text {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+.sidebar-logo-sub {
+  font-size: 0.7rem;
+  color: #BBBCBC;
+  margin-top: 1px;
+}
+.sidebar-nav {
+  margin-top: 16px;
+  flex: 1;
+  padding: 0 12px;
+}
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #bbbcbc;
+  transition: all 150ms ease;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+.sidebar-nav-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: #ffffff;
+}
+.sidebar-nav-item.active {
+  background: rgba(219, 107, 48, 0.15);
+  color: #ffffff;
+  border-left-color: #DB6B30;
+}
+.sidebar-nav-sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 24px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #bbbcbc;
+  transition: all 150ms ease;
+  border-left: 2px solid transparent;
+  text-decoration: none;
+  cursor: pointer;
+  margin-bottom: 2px;
+}
+.sidebar-nav-sub:hover {
+  background: rgba(219, 107, 48, 0.08);
+  color: #ffffff;
+}
+.sidebar-nav-sub.active {
+  background: rgba(219, 107, 48, 0.12);
+  color: #ffffff;
+  border-left-color: #DB6B30;
+}
+.sidebar-params {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  overflow-y: auto;
+  flex: 1;
+}
+.sidebar-params-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(187,188,188,0.6);
+  margin: 0 0 10px 0;
+}
+.sidebar-params .input-field {
+  min-width: unset;
+  width: 100%;
+  margin: 0 0 8px 0;
+}
+.sidebar-params .input-field label {
+  color: rgba(187,188,188,0.75);
+}
+.sidebar-params .input-field input {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: #ffffff;
+}
+.sidebar-params .input-field input:focus {
+  border-color: #DB6B30;
+  box-shadow: 0 0 0 2px rgba(219,107,48,0.25);
+}
+/* Dropdown inside sidebar */
+.sidebar-params .dash-dropdown .Select-control {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #ffffff !important;
+}
+.sidebar-params .dash-dropdown .Select-value-label {
+  color: #ffffff !important;
+}
+.sidebar-params .dash-dropdown .Select-arrow { border-top-color: #bbbcbc !important; }
+
+.sidebar-bottom {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 16px;
+  flex-shrink: 0;
+}
+.sidebar-bottom p {
+  color: rgba(187,188,188,0.5);
+  font-size: 0.75rem;
+  margin: 0 0 2px 0;
+}
+
+/* ── Main area ── */
+.main-area {
+  margin-left: 256px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Top bar ── */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.top-bar-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ── Page content ── */
+.page-content {
+  padding: 24px;
+}
+
+/* ── Cards ── */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+}
+.card-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin: 0 0 16px 0;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ── Input group ── */
+.input-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  margin: 0 -4px;
+}
+.input-field {
+  flex: 1;
+  min-width: 120px;
+  margin: 0 4px 10px 4px;
+}
+.input-field label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+.input-field input,
+.input-field .Select-control,
+.input-field .dash-dropdown .Select-control {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-family: Arial, sans-serif;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  -moz-appearance: textfield;
+}
+.input-field input:focus {
+  outline: none;
+  border-color: #DB6B30;
+  box-shadow: 0 0 0 3px rgba(219,107,48,0.15);
+}
+.input-field input[type=number]::-webkit-outer-spin-button,
+.input-field input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* ── Section divider ── */
+.section-divider {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  padding: 16px 0 8px 0;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 12px;
+}
+
+/* ── Run button override ── */
+#submit-btn {
+  background-color: #DB6B30 !important;
+  border-color: #DB6B30 !important;
+  color: #ffffff !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 28px !important;
+  border-radius: 6px !important;
+  min-height: 44px;
+  transition: background-color 150ms ease, box-shadow 150ms ease;
+}
+#submit-btn:hover {
+  background-color: #C45E28 !important;
+  border-color: #C45E28 !important;
+  box-shadow: 0 4px 12px rgba(219,107,48,0.35) !important;
+}
+
+/* ── Result section headings ── */
+.result-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 24px 0 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.result-section-title::before {
+  content: '';
+  width: 4px;
+  height: 18px;
+  background: #DB6B30;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+/* ── Stat chips ── */
+.stat-chip {
+  display: inline-block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 8px 8px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.stat-chip span {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+  margin-right: 4px;
+}
+
+/* ── Dropdown Dash override ── */
+.dash-dropdown .Select-control {
+  border: 1px solid var(--color-border) !important;
+  border-radius: 6px !important;
+  font-size: 0.875rem !important;
+  min-height: 36px !important;
+}
+.dash-dropdown .Select-control:hover {
+  border-color: var(--color-border-strong) !important;
+}
+.dash-dropdown.is-focused .Select-control {
+  border-color: #DB6B30 !important;
+  box-shadow: 0 0 0 3px rgba(219,107,48,0.15) !important;
+}
+
+/* ── Data table ── */
+.dash-spreadsheet-container .dash-spreadsheet-inner table {
+  border-collapse: collapse !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 0.8rem !important;
+}
+.dash-spreadsheet-container .dash-spreadsheet-inner th {
+  background: #f8fafc !important;
+  color: var(--color-text-muted) !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  padding: 8px 10px !important;
+  border-bottom: 2px solid var(--color-border) !important;
+}
+.dash-spreadsheet-container .dash-spreadsheet-inner td {
+  padding: 7px 10px !important;
+  border-bottom: 1px solid var(--color-border) !important;
+  color: var(--color-text-secondary) !important;
+}

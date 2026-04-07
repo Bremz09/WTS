@@ -5,3 +5,8 @@ plotly==6.5.2
 streamlit-authenticator==0.4.2
 altair==6.0.0
 standard-imghdr==3.13.0
+dash==4.1.0
+dash-bootstrap-components==2.0.4
+bcrypt==5.0.0
+flask
+dash
