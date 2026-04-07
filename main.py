@@ -163,6 +163,10 @@ li[role="option"] *,
     --gdg-border-color: #e0e0e0;
     --gdg-horizontal-border-color: #e0e0e0;
 }
+[data-testid="stSidebar"] {
+    min-width: 260px !important;
+    max-width: 260px !important;
+}
 #MainMenu, footer { visibility: hidden; }
 """)
     st.markdown(f"<style>{''.join(parts)}</style>", unsafe_allow_html=True)
@@ -553,14 +557,14 @@ if authentication_status:
         # --- Per-rider output ---
         def power_speed_fig(df_px, label):
             fig = go.Figure()
-            fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
-            fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
+            fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y', line=dict(color="#DB6B30", width=2)))
+            fig.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2", line=dict(color="#1A1A1A", width=2)))
             fig.update_layout(
                 paper_bgcolor="#f7f7f7",
                 plot_bgcolor="#f7f7f7",
                 font=dict(color="#000000", family="Arial, sans-serif"),
                 xaxis=dict(domain=[0.0, 1.0], gridcolor="#e0e0e0"),
-                yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4"), gridcolor="#e0e0e0"),
+                yaxis=dict(title=dict(text="Power (W)", font=dict(color="#DB6B30")), tickfont=dict(color="#DB6B30"), gridcolor="#e0e0e0"),
                 yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0, gridcolor="#e0e0e0"),
                 title_text="Power and Wheel speed"
             )
@@ -589,16 +593,18 @@ if authentication_status:
         st.write(f"Time to 500m is {round(time_to(500, df_p3), 3)}")
         st.write(f"Time to 750m is {round(time_to(750, df_p3), 3)}")
 
+        _RIDER_COLORS = {"p1": "#DB6B30", "p2": "#1A1A1A", "p3": "#6B7280"}
         fig_all = go.Figure()
         for df_px, label in [(df_p1, "p1"), (df_p2, "p2"), (df_p3, "p3")]:
-            fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y'))
-            fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2"))
+            c = _RIDER_COLORS[label]
+            fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["power_usable"], name=f"{label} Power", yaxis='y', line=dict(color=c, width=2)))
+            fig_all.add_trace(go.Scatter(mode='lines', x=df_px["Time"], y=df_px["wheel_speed"], name=f"{label} Wheel speed", yaxis="y2", line=dict(color=c, width=2, dash='dash')))
         fig_all.update_layout(
             paper_bgcolor="#f7f7f7",
             plot_bgcolor="#f7f7f7",
             font=dict(color="#000000", family="Arial, sans-serif"),
             xaxis=dict(domain=[0.0, 1.0], gridcolor="#e0e0e0"),
-            yaxis=dict(title=dict(text="Power (W)", font=dict(color="#1f77b4")), tickfont=dict(color="#1f77b4"), gridcolor="#e0e0e0"),
+            yaxis=dict(title=dict(text="Power (W)"), gridcolor="#e0e0e0"),
             yaxis2=dict(title="Wheel speed", overlaying="y", side="right", position=1.0, gridcolor="#e0e0e0"),
             title_text="Power and Wheel speed"
         )
