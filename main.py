@@ -19,73 +19,74 @@ update = datetime.date.today() + pd.DateOffset(hour=12)
 def intp(xval, df, xcol, ycol):
     return np.interp([xval], df[xcol], df[ycol])
 
-calcs = ["Female Team Sprint"]
-Calc = st.selectbox("Select Model:", calcs, key="Calc_selector")
+# Default specs: [seat_RPM, seat_torque, seat_CdA, stand_RPM, stand_torque, stand_CdA, mass, sprocket, chainring, seat_height, stand_fatigue_rate(Nm/s), seat_fatigue_rate(Nm/s)]
+RIDER_SPECS = {
+    "Petch":   [235, 207, 0.2050, 240, 223, 0.2563, 71.9, 15, 54, 0.96, 2.2, 2.1],
+    "Shaane":  [233, 253, 0.2340, 227, 289, 0.2925, 91.8, 15, 62, 1.04, 2.9, 2.5],
+    "Ellesse": [238, 202, 0.2180, 217, 270, 0.2725, 86.9, 15, 63, 1.01, 2.7, 2.0],
+}
+rider_options = list(RIDER_SPECS.keys())
 
-if Calc == "Female Team Sprint":
-    order = ["Petch, Shaane, Ellesse", "Shaane, Petch, Ellesse"]
-    Order = st.selectbox("Select Order:", order, key="Order_selector")
+c1, c2, c3 = st.columns(3)
+p1_name = c1.selectbox("P1:", rider_options, index=0, key="P1_selector")
+p2_name = c2.selectbox("P2:", rider_options, index=1, key="P2_selector")
+p3_name = c3.selectbox("P3:", rider_options, index=2, key="P3_selector")
 
-    # Default specs: [seat_RPM, seat_torque, seat_CdA, stand_RPM, stand_torque, stand_CdA, mass, sprocket, chainring, seat_height, stand_fatigue_rate(Nm/s), seat_fatigue_rate(Nm/s)]
-    PETCH   = [235, 207, 0.2050, 240, 223, 0.2563, 71.9, 15, 54, 0.96, 2.2, 2.1]
-    SHAANE  = [233, 253, 0.2340, 227, 289, 0.2925, 91.8, 15, 62, 1.04, 2.9, 2.5]
-    ELLESSE = [238, 202, 0.2180, 217, 270, 0.2725, 86.9, 15, 63, 1.01, 2.7, 2.0]
+rider_names = [p1_name, p2_name, p3_name]
+if len(set(rider_names)) < 3:
+    st.error("Each position must have a different rider.")
+    st.stop()
+rider_defaults = [RIDER_SPECS[n] for n in rider_names]
 
-    if Order == order[0]:
-        rider_names = ["Petch", "Shaane", "Ellesse"]
-        rider_defaults = [PETCH, SHAANE, ELLESSE]
-    else:
-        rider_names = ["Shaane", "Petch", "Ellesse"]
-        rider_defaults = [SHAANE, PETCH, ELLESSE]
+def rider_inputs(name, kn, d):
+    st.subheader(f"{name} specs")
+    pfx = f"{kn}_{name}"
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    v = [
+        c1.number_input("Seated Max RPM:",    min_value=0.01, max_value=500.0,  value=float(d[0]), key=f"{pfx}_1"),
+        c2.number_input("Seated Max Torque:", min_value=0.01, max_value=500.0,  value=float(d[1]), key=f"{pfx}_2"),
+        c3.number_input("Seated CdA:",        min_value=0.0001, max_value=2.0,  value=float(d[2]), step=1e-4, format="%.4f", key=f"{pfx}_3"),
+        c4.number_input("Standing Max RPM:",  min_value=0.01, max_value=500.0,  value=float(d[3]), key=f"{pfx}_4"),
+        c5.number_input("Standing Max Torque:", min_value=0.01, max_value=500.0, value=float(d[4]), key=f"{pfx}_5"),
+        c6.number_input("Standing CdA:",      min_value=0.0,  max_value=20.0,   value=float(d[5]), step=1e-4, format="%.4f", key=f"{pfx}_6"),
+    ]
+    c1, c2, c3, c4 = st.columns(4)
+    v += [
+        c1.number_input("Total Mass:",  min_value=40.0, max_value=150.0, value=float(d[6]), step=0.1, format="%.1f", key=f"{pfx}_7"),
+        c2.number_input("Sprocket:",    min_value=12,   max_value=22,    value=int(d[7]),   step=1,   key=f"{pfx}_8"),
+        c3.number_input("Chain Ring:",  min_value=40,   max_value=100,   value=int(d[8]),   step=1,   key=f"{pfx}_9"),
+        c4.number_input("Seat Height:", min_value=0.50, max_value=2.00,  value=float(d[9]),            key=f"{pfx}_10"),
+    ]
+    c1, c2 = st.columns(2)
+    v += [
+        c1.number_input("Standing Fatigue Rate (Nm/s):", min_value=0.0, max_value=100.0, value=float(d[10]), step=0.1, format="%.1f", key=f"{pfx}_11"),
+        c2.number_input("Seated Fatigue Rate (Nm/s):",   min_value=0.0, max_value=100.0, value=float(d[11]), step=0.1, format="%.1f", key=f"{pfx}_12"),
+    ]
+    return v
 
-    def rider_inputs(name, kn, d):
-        st.subheader(f"{name} specs")
-        c1, c2, c3, c4, c5, c6 = st.columns(6)
-        v = [
-            c1.number_input("Seated Max RPM:",    min_value=0.01, max_value=500.0,  value=float(d[0]), key=f"{kn}_1"),
-            c2.number_input("Seated Max Torque:", min_value=0.01, max_value=500.0,  value=float(d[1]), key=f"{kn}_2"),
-            c3.number_input("Seated CdA:",        min_value=0.0001, max_value=2.0,  value=float(d[2]), step=1e-4, format="%.4f", key=f"{kn}_3"),
-            c4.number_input("Standing Max RPM:",  min_value=0.01, max_value=500.0,  value=float(d[3]), key=f"{kn}_4"),
-            c5.number_input("Standing Max Torque:", min_value=0.01, max_value=500.0, value=float(d[4]), key=f"{kn}_5"),
-            c6.number_input("Standing CdA:",      min_value=0.0,  max_value=20.0,   value=float(d[5]), step=1e-4, format="%.4f", key=f"{kn}_6"),
-        ]
-        c1, c2, c3, c4 = st.columns(4)
-        v += [
-            c1.number_input("Total Mass:",  min_value=40.0, max_value=150.0, value=float(d[6]), step=0.1, format="%.1f", key=f"{kn}_7"),
-            c2.number_input("Sprocket:",    min_value=12,   max_value=22,    value=int(d[7]),   step=1,   key=f"{kn}_8"),
-            c3.number_input("Chain Ring:",  min_value=40,   max_value=100,   value=int(d[8]),   step=1,   key=f"{kn}_9"),
-            c4.number_input("Seat Height:", min_value=0.50, max_value=2.00,  value=float(d[9]),            key=f"{kn}_10"),
-        ]
-        c1, c2 = st.columns(2)
-        v += [
-            c1.number_input("Standing Fatigue Rate (Nm/s):", min_value=0.0, max_value=100.0, value=float(d[10]), step=0.1, format="%.1f", key=f"{kn}_11"),
-            c2.number_input("Seated Fatigue Rate (Nm/s):",   min_value=0.0, max_value=100.0, value=float(d[11]), step=0.1, format="%.1f", key=f"{kn}_12"),
-        ]
-        return v
+with st.sidebar:
+    st.subheader("Global specs")
+    air_density           = st.number_input("Air Density:",             min_value=0.001, max_value=3.2,   value=1.168, step=1e-3, format="%.3f", key="4_1")
+    dist_at_sit           = st.number_input("Distance at sit:",         min_value=0.01,  max_value=750.0, value=150.0, step=0.1,  format="%.1f", key="4_2")
+    fatigue_onset         = st.number_input("Onset of Fatigue (s):",    min_value=0.1,   max_value=2.0,   value=1.0,   step=0.1,  format="%.1f", key="4_5")
+    track_circumference   = st.selectbox("Track Circumference:",        [250, 333, 500],                              key="Track_circumference")
+    straight_bank_angle   = st.number_input("Straight Bank Angle:",     min_value=0.0, max_value=90.0, value=13.00)
+    bend_bank_angle       = st.number_input("Bend Bank Angle:",         min_value=0.0, max_value=90.0, value=46.13)
+    pl_to_trans           = st.number_input("Distance from Pursuit Line to Transition:", min_value=0.0, max_value=90.0, value=31.25)
+    transition_length     = st.number_input("Transition length:",       min_value=0.0, max_value=90.0, value=10.00)
 
-    with st.sidebar:
-        st.subheader("Global specs")
-        air_density           = st.number_input("Air Density:",             min_value=0.001, max_value=3.2,   value=1.168, step=1e-3, format="%.3f", key="4_1")
-        dist_at_sit           = st.number_input("Distance at sit:",         min_value=0.01,  max_value=750.0, value=150.0, step=0.1,  format="%.1f", key="4_2")
-        fatigue_onset         = st.number_input("Onset of Fatigue (s):",    min_value=0.1,   max_value=2.0,   value=1.0,   step=0.1,  format="%.1f", key="4_5")
-        track_circumference   = st.selectbox("Track Circumference:",        [250, 333, 500],                              key="Track_circumference")
-        straight_bank_angle   = st.number_input("Straight Bank Angle:",     min_value=0.0, max_value=90.0, value=13.00)
-        bend_bank_angle       = st.number_input("Bend Bank Angle:",         min_value=0.0, max_value=90.0, value=46.13)
-        pl_to_trans           = st.number_input("Distance from Pursuit Line to Transition:", min_value=0.0, max_value=90.0, value=31.25)
-        transition_length     = st.number_input("Transition length:",       min_value=0.0, max_value=90.0, value=10.00)
+with st.form("my_form"):
+    r1 = rider_inputs(rider_names[0], "1", rider_defaults[0])
+    r2 = rider_inputs(rider_names[1], "2", rider_defaults[1])
+    r3 = rider_inputs(rider_names[2], "3", rider_defaults[2])
+    submitted = st.form_submit_button("Update Specs")
 
-    with st.form("my_form"):
-        r1 = rider_inputs(rider_names[0], "1", rider_defaults[0])
-        r2 = rider_inputs(rider_names[1], "2", rider_defaults[1])
-        r3 = rider_inputs(rider_names[2], "3", rider_defaults[2])
-        submitted = st.form_submit_button("Update Specs")
+(seat_max_RPM_1, seat_max_torque_1, seat_CdA_1, stand_max_RPM_1, stand_max_torque_1, stand_CdA_1, total_mass_1, sprocket_1, chainring_1, seat_height_1, stand_fatigue_rate_1, seat_fatigue_rate_1) = r1
+(seat_max_RPM_2, seat_max_torque_2, seat_CdA_2, stand_max_RPM_2, stand_max_torque_2, stand_CdA_2, total_mass_2, sprocket_2, chainring_2, seat_height_2, stand_fatigue_rate_2, seat_fatigue_rate_2) = r2
+(seat_max_RPM_3, seat_max_torque_3, seat_CdA_3, stand_max_RPM_3, stand_max_torque_3, stand_CdA_3, total_mass_3, sprocket_3, chainring_3, seat_height_3, stand_fatigue_rate_3, seat_fatigue_rate_3) = r3
 
-    (seat_max_RPM_1, seat_max_torque_1, seat_CdA_1, stand_max_RPM_1, stand_max_torque_1, stand_CdA_1, total_mass_1, sprocket_1, chainring_1, seat_height_1, stand_fatigue_rate_1, seat_fatigue_rate_1) = r1
-    (seat_max_RPM_2, seat_max_torque_2, seat_CdA_2, stand_max_RPM_2, stand_max_torque_2, stand_CdA_2, total_mass_2, sprocket_2, chainring_2, seat_height_2, stand_fatigue_rate_2, seat_fatigue_rate_2) = r2
-    (seat_max_RPM_3, seat_max_torque_3, seat_CdA_3, stand_max_RPM_3, stand_max_torque_3, stand_CdA_3, total_mass_3, sprocket_3, chainring_3, seat_height_3, stand_fatigue_rate_3, seat_fatigue_rate_3) = r3
-
-    @st.cache_data
-    def _run_sim(r1t, r2t, r3t,
+@st.cache_data
+def _run_sim(r1t, r2t, r3t,
                  air_density, dist_at_sit, fatigue_onset,
                  straight_bank_angle, bend_bank_angle, pl_to_trans, transition_length):
         """Run the full simulation. All args are primitives so st.cache_data can hash them."""
@@ -327,244 +328,254 @@ if Calc == "Female Team Sprint":
         df_p3 = make_df(p3d, extra_cols=('accel_demand', 'rr_demand', 'aero_demand', 'power_demand', 'dem_sup'))
         return df_p1, df_p2, df_p3
 
-    df_p1, df_p2, df_p3 = _run_sim(
-        tuple(r1), tuple(r2), tuple(r3),
-        air_density, dist_at_sit, fatigue_onset,
-        straight_bank_angle, bend_bank_angle, pl_to_trans, transition_length
-    )
+df_p1, df_p2, df_p3 = _run_sim(
+    tuple(r1), tuple(r2), tuple(r3),
+    air_density, dist_at_sit, fatigue_onset,
+    straight_bank_angle, bend_bank_angle, pl_to_trans, transition_length
+)
 
-    fig_dem_v_supp = px.line(df_p3, x="Time", y=[df_p3["dem_sup"], df_p3["COM_speed"], df_p3["gap"]])
-    # st.plotly_chart(fig_dem_v_supp, use_container_width=True)
+fig_dem_v_supp = px.line(df_p3, x="Time", y=[df_p3["dem_sup"], df_p3["COM_speed"], df_p3["gap"]])
+# st.plotly_chart(fig_dem_v_supp, use_container_width=True)
 
-    # --- Summary ---
-    st.header("Summary")
-    table_inc = st.select_slider("Table increment (m):", options=[5, 25, 62.5, 125], value=25)
+# --- Summary ---
+st.header("Summary")
+table_inc = st.select_slider("Table increment (m):", options=[5, 25, 62.5, 125], value=25)
 
-    def _dists(start, stop, inc):
-        return [round(float(v), 4) for v in np.arange(start, stop + inc * 0.5, inc)]
+def _dists(start, stop, inc):
+    return [round(float(v), 4) for v in np.arange(start, stop + inc * 0.5, inc)]
 
-    dists_p1      = _dists(table_inc, 250, table_inc)
-    dists_p2_only = _dists(250 + table_inc, 500, table_inc)
-    dists_p3_only = _dists(500 + table_inc, 750, table_inc)
-    dists_p2 = dists_p1 + dists_p2_only
-    dists_p3 = dists_p2 + dists_p3_only
+dists_p1      = _dists(table_inc, 250, table_inc)
+dists_p2_only = _dists(250 + table_inc, 500, table_inc)
+dists_p3_only = _dists(500 + table_inc, 750, table_inc)
+dists_p2 = dists_p1 + dists_p2_only
+dists_p3 = dists_p2 + dists_p3_only
 
-    def qt(d, df_px):
-        return round(intp(d, df_px, 'wheel_dist', 'Time')[0], 3)
+def qt(d, df_px):
+    return round(intp(d, df_px, 'wheel_dist', 'Time')[0], 3)
 
-    p1_qt = {d: qt(d, df_p1) for d in dists_p1}
-    p2_qt = {d: qt(d, df_p2) for d in dists_p2}
-    p3_qt = {d: qt(d, df_p3) for d in dists_p3}
+p1_qt = {d: qt(d, df_p1) for d in dists_p1}
+p2_qt = {d: qt(d, df_p2) for d in dists_p2}
+p3_qt = {d: qt(d, df_p3) for d in dists_p3}
 
-    col_labels = {d: f"{d:g}m" for d in dists_p3}
+col_labels = {d: f"{d:g}m" for d in dists_p3}
 
-    df_time = pd.DataFrame({"Rider": rider_names}).set_index("Rider")
+df_time = pd.DataFrame({"Rider": rider_names}).set_index("Rider")
+for d in dists_p1:
+    df_time[col_labels[d]] = [p1_qt[d], p2_qt[d], p3_qt[d]]
+for d in dists_p2_only:
+    df_time[col_labels[d]] = [0, p2_qt[d], p3_qt[d]]
+for d in dists_p3_only:
+    df_time[col_labels[d]] = [0, 0, p3_qt[d]]
+st.subheader("Time")
+st.dataframe(df_time, use_container_width=False)
+
+df_gap = pd.DataFrame({"Rider": [rider_names[1], rider_names[2]]}).set_index("Rider")
+for d in dists_p1:
+    df_gap[col_labels[d]] = [p2_qt[d] - p1_qt[d], p3_qt[d] - p2_qt[d]]
+for d in dists_p2_only:
+    df_gap[col_labels[d]] = [0, p3_qt[d] - p2_qt[d]]
+st.subheader("Gap (s)")
+st.dataframe(df_gap, use_container_width=False)
+
+df_dist_gap = pd.DataFrame({"Rider": [rider_names[1], rider_names[2]]}).set_index("Rider")
+for d in dists_p1:
+    df_dist_gap[col_labels[d]] = [round(d - intp(p1_qt[d], df_p2, 'Time', 'wheel_dist')[0], 2),
+                                   round(d - intp(p2_qt[d], df_p3, 'Time', 'wheel_dist')[0], 2)]
+for d in dists_p2_only:
+    df_dist_gap[col_labels[d]] = [0, round(d - intp(p2_qt[d], df_p3, 'Time', 'wheel_dist')[0], 2)]
+st.subheader("Gap (m)")
+st.dataframe(df_dist_gap, use_container_width=False)
+
+def make_summary_df(field, label, dp=2):
+    df_s = pd.DataFrame({"Rider": rider_names}).set_index("Rider")
     for d in dists_p1:
-        df_time[col_labels[d]] = [p1_qt[d], p2_qt[d], p3_qt[d]]
+        df_s[col_labels[d]] = [round(intp(p1_qt[d], df_p1, 'Time', field)[0], dp),
+                                round(intp(p2_qt[d], df_p2, 'Time', field)[0], dp),
+                                round(intp(p3_qt[d], df_p3, 'Time', field)[0], dp)]
     for d in dists_p2_only:
-        df_time[col_labels[d]] = [0, p2_qt[d], p3_qt[d]]
+        df_s[col_labels[d]] = [0,
+                                round(intp(p2_qt[d], df_p2, 'Time', field)[0], dp),
+                                round(intp(p3_qt[d], df_p3, 'Time', field)[0], dp)]
     for d in dists_p3_only:
-        df_time[col_labels[d]] = [0, 0, p3_qt[d]]
-    st.dataframe(df_time, use_container_width=False)
+        df_s[col_labels[d]] = [0, 0, round(intp(p3_qt[d], df_p3, 'Time', field)[0], dp)]
+    return df_s
 
-    df_gap = pd.DataFrame({"Rider": [rider_names[1], rider_names[2]]}).set_index("Rider")
-    for d in dists_p1:
-        df_gap[col_labels[d]] = [p2_qt[d] - p1_qt[d], p3_qt[d] - p2_qt[d]]
-    for d in dists_p2_only:
-        df_gap[col_labels[d]] = [0, p3_qt[d] - p2_qt[d]]
-    st.dataframe(df_gap, use_container_width=False)
+df_cadence = make_summary_df('cadence', 'Cadence', dp=0)
+styled_cadence = df_cadence.replace(0, np.nan).style.background_gradient(axis=1, cmap='RdYlGn').format("{:.0f}", na_rep="")
+st.subheader("Cadence")
+st.dataframe(styled_cadence, use_container_width=False)
 
-    df_dist_gap = pd.DataFrame({"Rider": [rider_names[1], rider_names[2]]}).set_index("Rider")
-    for d in dists_p1:
-        df_dist_gap[col_labels[d]] = [round(intp(p1_qt[d], df_p2, 'Time', 'gap')[0], 2),
-                                       round(intp(p2_qt[d], df_p3, 'Time', 'gap')[0], 2)]
-    for d in dists_p2_only:
-        df_dist_gap[col_labels[d]] = [0, round(intp(p2_qt[d], df_p3, 'Time', 'gap')[0], 2)]
-    st.dataframe(df_dist_gap, use_container_width=False)
+df_wheel_speed = make_summary_df('wheel_speed', 'wheel_speed')
+df_wheel_speed = df_wheel_speed.apply(lambda x: round(x * 3.6, 2))
+styled_speed = df_wheel_speed.replace(0, np.nan).style.background_gradient(axis=1, cmap='RdYlGn').format("{:.2f}", na_rep="")
+st.subheader("Speed (kph)")
+st.dataframe(styled_speed, use_container_width=False)
 
-    def make_summary_df(field, label, dp=2):
-        df_s = pd.DataFrame({"Rider": rider_names}).set_index("Rider")
-        for d in dists_p1:
-            df_s[col_labels[d]] = [round(intp(p1_qt[d], df_p1, 'Time', field)[0], dp),
-                                    round(intp(p2_qt[d], df_p2, 'Time', field)[0], dp),
-                                    round(intp(p3_qt[d], df_p3, 'Time', field)[0], dp)]
-        for d in dists_p2_only:
-            df_s[col_labels[d]] = [0,
-                                    round(intp(p2_qt[d], df_p2, 'Time', field)[0], dp),
-                                    round(intp(p3_qt[d], df_p3, 'Time', field)[0], dp)]
-        for d in dists_p3_only:
-            df_s[col_labels[d]] = [0, 0, round(intp(p3_qt[d], df_p3, 'Time', field)[0], dp)]
-        return df_s
+df_power = make_summary_df('power_usable', 'Power', dp=0)
+styled_power = df_power.replace(0, np.nan).style.background_gradient(axis=1, cmap='RdYlGn').format("{:.0f}", na_rep="")
+st.subheader("Power (W)")
+st.dataframe(styled_power, use_container_width=False)
 
-    df_cadence = make_summary_df('cadence', 'Cadence', dp=0)
-    styled_cadence = df_cadence.replace(0, np.nan).style.background_gradient(axis=1, cmap='RdYlGn').format("{:.0f}", na_rep="")
-    st.dataframe(styled_cadence, use_container_width=False)
+# --- CSV export ---
+combined_csv = pd.concat([
+    df_p1.assign(rider=rider_names[0]),
+    df_p2.assign(rider=rider_names[1]),
+    df_p3.assign(rider=rider_names[2])
+])
+st.download_button("Download CSV", combined_csv.to_csv(index=False),
+                   "team_sprint_results.csv", "text/csv")
 
-    df_wheel_speed = make_summary_df('wheel_speed', 'wheel_speed')
-    df_wheel_speed = df_wheel_speed.apply(lambda x: round(x * 3.6, 2))
-    st.write("Wheel speed in km/h")
-    st.dataframe(df_wheel_speed, use_container_width=False)
+# --- Per-rider tabs ---
+from plotly.subplots import make_subplots as _make_subplots
 
-    # --- CSV export ---
-    combined_csv = pd.concat([
-        df_p1.assign(rider=rider_names[0]),
-        df_p2.assign(rider=rider_names[1]),
-        df_p3.assign(rider=rider_names[2])
-    ])
-    st.download_button("Download CSV", combined_csv.to_csv(index=False),
-                       "team_sprint_results.csv", "text/csv")
+def time_to(dist, df_px):
+    row = df_px.iloc[(df_px['wheel_dist'] - dist).abs().argsort()[:2]].reset_index(drop=True)
+    return row["Time"][1] + (dist - row["wheel_dist"][1]) / row["wheel_speed"][1]
 
-    # --- Per-rider tabs ---
-    from plotly.subplots import make_subplots as _make_subplots
+# Combined 3-row power+speed subplot (shown above tabs)
+fig_all = _make_subplots(rows=3, cols=1, shared_xaxes=True,
+                         specs=[[{"secondary_y": True}]] * 3,
+                         subplot_titles=rider_names)
+for i, (df_px, label) in enumerate([(df_p1, rider_names[0]), (df_p2, rider_names[1]), (df_p3, rider_names[2])], 1):
+    fig_all.add_trace(go.Scatter(x=df_px["Time"], y=df_px["power_usable"],
+                                 name=f"{label} Power", line=dict(color='royalblue')), row=i, col=1)
+    fig_all.add_trace(go.Scatter(x=df_px["Time"], y=df_px["wheel_speed"] * 3.6,
+                                 name=f"{label} Speed (km/h)", line=dict(color='crimson')),
+                      row=i, col=1, secondary_y=True)
+fig_all.update_yaxes(title_text="Power (W)", secondary_y=False)
+fig_all.update_yaxes(title_text="Speed (km/h)", secondary_y=True)
+fig_all.update_layout(title_text="Power & Speed — all riders", height=700)
+st.plotly_chart(fig_all, use_container_width=True)
 
-    def time_to(dist, df_px):
-        row = df_px.iloc[(df_px['wheel_dist'] - dist).abs().argsort()[:2]].reset_index(drop=True)
-        return row["Time"][1] + (dist - row["wheel_dist"][1]) / row["wheel_speed"][1]
+# Fatigue (T_max) chart — reconstruct T_max using per-rider TC slope
+fig_fatigue = go.Figure()
+for df_px, label, r in [(df_p1, rider_names[0], r1), (df_p2, rider_names[1], r2), (df_p3, rider_names[2], r3)]:
+    # r = [seat_RPM, seat_torque, seat_CdA, stand_RPM, stand_torque, ...]
+    stand_slope = -float(r[4]) / float(r[3])   # -stand_max_torque / stand_max_RPM
+    t_max_series = df_px["torque"] - df_px["cadence"] * stand_slope
+    fig_fatigue.add_trace(go.Scatter(x=df_px["Time"], y=t_max_series, mode='lines', name=f"{label} T_max"))
+fig_fatigue.update_layout(title_text="T_max over time (reconstructed)", xaxis_title="Time (s)", yaxis_title="T_max (Nm)")
+st.plotly_chart(fig_fatigue, use_container_width=True)
 
-    # Combined 3-row power+speed subplot (shown above tabs)
-    fig_all = _make_subplots(rows=3, cols=1, shared_xaxes=True,
-                             specs=[[{"secondary_y": True}]] * 3,
-                             subplot_titles=rider_names)
-    for i, (df_px, label) in enumerate([(df_p1, rider_names[0]), (df_p2, rider_names[1]), (df_p3, rider_names[2])], 1):
-        fig_all.add_trace(go.Scatter(x=df_px["Time"], y=df_px["power_usable"],
-                                     name=f"{label} Power", line=dict(color='royalblue')), row=i, col=1)
-        fig_all.add_trace(go.Scatter(x=df_px["Time"], y=df_px["wheel_speed"] * 3.6,
-                                     name=f"{label} Speed (km/h)", line=dict(color='crimson')),
-                          row=i, col=1, secondary_y=True)
-    fig_all.update_yaxes(title_text="Power (W)", secondary_y=False)
-    fig_all.update_yaxes(title_text="Speed (km/h)", secondary_y=True)
-    fig_all.update_layout(title_text="Power & Speed — all riders", height=700)
-    st.plotly_chart(fig_all, use_container_width=True)
+# Per-rider tabs
+tab1, tab2, tab3, tab4 = st.tabs([rider_names[0], rider_names[1], rider_names[2], "Animation"])
 
-    # Fatigue (T_max) chart — reconstruct T_max using per-rider TC slope
-    fig_fatigue = go.Figure()
-    for df_px, label, r in [(df_p1, rider_names[0], r1), (df_p2, rider_names[1], r2), (df_p3, rider_names[2], r3)]:
-        # r = [seat_RPM, seat_torque, seat_CdA, stand_RPM, stand_torque, ...]
-        stand_slope = -float(r[4]) / float(r[3])   # -stand_max_torque / stand_max_RPM
-        t_max_series = df_px["torque"] - df_px["cadence"] * stand_slope
-        fig_fatigue.add_trace(go.Scatter(x=df_px["Time"], y=t_max_series, mode='lines', name=f"{label} T_max"))
-    fig_fatigue.update_layout(title_text="T_max over time (reconstructed)", xaxis_title="Time (s)", yaxis_title="T_max (Nm)")
-    st.plotly_chart(fig_fatigue, use_container_width=True)
+with tab1:
+    p1_250_time = df_p1["Time"].iloc[-2] + ((250 - df_p1["wheel_dist"].iloc[-2]) / df_p1["wheel_speed"].iloc[-2])
+    st.write(f"Time to 250m: **{round(p1_250_time, 3)} s**")
 
-    # Per-rider tabs
-    tab1, tab2, tab3, tab4 = st.tabs([rider_names[0], rider_names[1], rider_names[2], "Animation"])
+with tab2:
+    st.write(f"Time to 250m: **{round(time_to(250, df_p2), 3)} s**")
+    st.write(f"Time to 500m: **{round(time_to(500, df_p2), 3)} s**")
 
-    with tab1:
-        p1_250_time = df_p1["Time"].iloc[-2] + ((250 - df_p1["wheel_dist"].iloc[-2]) / df_p1["wheel_speed"].iloc[-2])
-        st.write(f"Time to 250m: **{round(p1_250_time, 3)} s**")
+with tab3:
+    st.write(f"Time to 250m: **{round(time_to(250, df_p3), 3)} s**")
+    st.write(f"Time to 500m: **{round(time_to(500, df_p3), 3)} s**")
+    st.write(f"Time to 750m: **{round(time_to(750, df_p3), 3)} s**")
 
-    with tab2:
-        st.write(f"Time to 250m: **{round(time_to(250, df_p2), 3)} s**")
-        st.write(f"Time to 500m: **{round(time_to(500, df_p2), 3)} s**")
+with tab4:
+    t_max_anim = float(max(df_p1["Time"].iloc[-1], df_p2["Time"].iloc[-1], df_p3["Time"].iloc[-1]))
+    anim_times = np.arange(0.0, t_max_anim + 0.2, 0.2)
 
-    with tab3:
-        st.write(f"Time to 250m: **{round(time_to(250, df_p3), 3)} s**")
-        st.write(f"Time to 500m: **{round(time_to(500, df_p3), 3)} s**")
-        st.write(f"Time to 750m: **{round(time_to(750, df_p3), 3)} s**")
+    def get_dist_at(df_px, t):
+        t_arr = df_px["Time"].values
+        wd_arr = df_px["wheel_dist"].values
+        return float(np.interp(min(float(t), float(t_arr[-1])), t_arr, wd_arr))
 
-    with tab4:
-        t_max_anim = float(max(df_p1["Time"].iloc[-1], df_p2["Time"].iloc[-1], df_p3["Time"].iloc[-1]))
-        anim_times = np.arange(0.0, t_max_anim + 0.2, 0.2)
+    colors_anim = ['crimson', 'royalblue', 'seagreen']
+    y_riders = [0.18, 0.0, -0.18]
+    max_dist_anim = 760
 
-        def get_dist_at(df_px, t):
-            t_arr = df_px["Time"].values
-            wd_arr = df_px["wheel_dist"].values
-            return float(np.interp(min(float(t), float(t_arr[-1])), t_arr, wd_arr))
+    marker_xs, marker_ys = [], []
+    label_xs, label_ys, label_texts = [], [], []
+    for d in range(0, max_dist_anim + 1, 10):
+        marker_xs += [d, d, None]
+        marker_ys += [-0.55, 0.55, None]
+        label_xs.append(d)
+        label_ys.append(-0.82)
+        label_texts.append(f"{d}m")
 
-        colors_anim = ['crimson', 'royalblue', 'seagreen']
-        y_riders = [0.18, 0.0, -0.18]
-        max_dist_anim = 760
+    static_traces = [
+        go.Scatter(x=[0, max_dist_anim], y=[0, 0],
+                   mode='lines', line=dict(color='#555', width=3),
+                   showlegend=False, hoverinfo='skip'),
+        go.Scatter(x=marker_xs, y=marker_ys,
+                   mode='lines', line=dict(color='rgba(180,180,180,0.5)', width=1),
+                   showlegend=False, hoverinfo='skip'),
+        go.Scatter(x=label_xs, y=label_ys, mode='text',
+                   text=label_texts, textfont=dict(size=9, color='#aaaaaa'),
+                   showlegend=False, hoverinfo='skip'),
+    ]
 
-        marker_xs, marker_ys = [], []
-        label_xs, label_ys, label_texts = [], [], []
-        for d in range(0, max_dist_anim + 1, 10):
-            marker_xs += [d, d, None]
-            marker_ys += [-0.55, 0.55, None]
-            label_xs.append(d)
-            label_ys.append(-0.82)
-            label_texts.append(f"{d}m")
+    init_rider_traces = []
+    for df_px, name, color, y in zip([df_p1, df_p2, df_p3], rider_names, colors_anim, y_riders):
+        d0 = get_dist_at(df_px, 0.0)
+        init_rider_traces.append(go.Scatter(
+            x=[d0], y=[y], mode='markers+text',
+            marker=dict(size=20, color=color),
+            text=[name], textposition='top center',
+            textfont=dict(size=12, color='white'),
+            name=name
+        ))
 
-        static_traces = [
-            go.Scatter(x=[0, max_dist_anim], y=[0, 0],
-                       mode='lines', line=dict(color='#555', width=3),
-                       showlegend=False, hoverinfo='skip'),
-            go.Scatter(x=marker_xs, y=marker_ys,
-                       mode='lines', line=dict(color='rgba(180,180,180,0.5)', width=1),
-                       showlegend=False, hoverinfo='skip'),
-            go.Scatter(x=label_xs, y=label_ys, mode='text',
-                       text=label_texts, textfont=dict(size=9, color='#aaaaaa'),
-                       showlegend=False, hoverinfo='skip'),
-        ]
-
-        init_rider_traces = []
-        for df_px, name, color, y in zip([df_p1, df_p2, df_p3], rider_names, colors_anim, y_riders):
-            d0 = get_dist_at(df_px, 0.0)
-            init_rider_traces.append(go.Scatter(
-                x=[d0], y=[y], mode='markers+text',
+    anim_frames = []
+    for i, t in enumerate(anim_times):
+        d1 = get_dist_at(df_p1, t)
+        d2 = get_dist_at(df_p2, t)
+        d3 = get_dist_at(df_p3, t)
+        frame_data = []
+        for dist, name, color, y in zip([d1, d2, d3], rider_names, colors_anim, y_riders):
+            frame_data.append(go.Scatter(
+                x=[dist], y=[y], mode='markers+text',
                 marker=dict(size=20, color=color),
                 text=[name], textposition='top center',
                 textfont=dict(size=12, color='white'),
-                name=name
+                name=name, showlegend=False
             ))
+        anim_frames.append(go.Frame(
+            data=frame_data,
+            traces=[3, 4, 5],
+            name=f"f{i}"
+        ))
 
-        anim_frames = []
-        for i, t in enumerate(anim_times):
-            d1 = get_dist_at(df_p1, t)
-            d2 = get_dist_at(df_p2, t)
-            d3 = get_dist_at(df_p3, t)
-            frame_data = []
-            for dist, name, color, y in zip([d1, d2, d3], rider_names, colors_anim, y_riders):
-                frame_data.append(go.Scatter(
-                    x=[dist], y=[y], mode='markers+text',
-                    marker=dict(size=20, color=color),
-                    text=[name], textposition='top center',
-                    textfont=dict(size=12, color='white'),
-                    name=name, showlegend=False
-                ))
-            anim_frames.append(go.Frame(
-                data=frame_data,
-                traces=[3, 4, 5],
-                name=f"f{i}"
-            ))
+    slider_steps_anim = [
+        dict(method='animate',
+             args=[[f"f{i}"], dict(mode='immediate', frame=dict(duration=0, redraw=False))],
+             label=f"{t:.0f}s" if i % 5 == 0 else "")
+        for i, t in enumerate(anim_times)
+    ]
 
-        slider_steps_anim = [
-            dict(method='animate',
-                 args=[[f"f{i}"], dict(mode='immediate', frame=dict(duration=0, redraw=False))],
-                 label=f"{t:.0f}s" if i % 5 == 0 else "")
-            for i, t in enumerate(anim_times)
-        ]
-
-        fig_anim = go.Figure(data=static_traces + init_rider_traces, frames=anim_frames)
-        fig_anim.update_layout(
-            title="Team Sprint — Side View",
-            height=380,
-            plot_bgcolor='#1a1a2e',
-            paper_bgcolor='white',
-            xaxis=dict(range=[0, max_dist_anim], showgrid=False, zeroline=False,
-                       showticklabels=False, fixedrange=True),
-            yaxis=dict(range=[-1.3, 1.3], showgrid=False, zeroline=False,
-                       showticklabels=False, fixedrange=True),
-            margin=dict(l=20, r=20, t=60, b=120),
-            legend=dict(orientation='h', x=0.5, xanchor='center', y=1.08),
-            updatemenus=[dict(
-                type='buttons', showactive=False,
-                y=-0.18, x=0.5, xanchor='center',
-                buttons=[
-                    dict(label='▶ Play', method='animate',
-                         args=[None, dict(frame=dict(duration=200, redraw=False),
-                                          fromcurrent=True, mode='immediate')]),
-                    dict(label='⏸ Pause', method='animate',
-                         args=[[None], dict(frame=dict(duration=0, redraw=False),
-                                            mode='immediate')])
-                ]
-            )],
-            sliders=[dict(
-                active=0,
-                currentvalue=dict(prefix='Time: ', suffix=' s', visible=True,
-                                  font=dict(size=14)),
-                pad=dict(t=10, b=10),
-                x=0.0, y=-0.05, len=1.0,
-                steps=slider_steps_anim
-            )]
-        )
-        st.plotly_chart(fig_anim, use_container_width=True)
+    fig_anim = go.Figure(data=static_traces + init_rider_traces, frames=anim_frames)
+    fig_anim.update_layout(
+        title="Team Sprint — Side View",
+        height=380,
+        plot_bgcolor='#1a1a2e',
+        paper_bgcolor='white',
+        xaxis=dict(range=[0, max_dist_anim], showgrid=False, zeroline=False,
+                   showticklabels=False, fixedrange=True),
+        yaxis=dict(range=[-1.3, 1.3], showgrid=False, zeroline=False,
+                   showticklabels=False, fixedrange=True),
+        margin=dict(l=20, r=20, t=60, b=120),
+        legend=dict(orientation='h', x=0.5, xanchor='center', y=1.08),
+        updatemenus=[dict(
+            type='buttons', showactive=False,
+            y=-0.18, x=0.5, xanchor='center',
+            buttons=[
+                dict(label='▶ Play', method='animate',
+                     args=[None, dict(frame=dict(duration=200, redraw=False),
+                                      fromcurrent=True, mode='immediate')]),
+                dict(label='⏸ Pause', method='animate',
+                     args=[[None], dict(frame=dict(duration=0, redraw=False),
+                                        mode='immediate')])
+            ]
+        )],
+        sliders=[dict(
+            active=0,
+            currentvalue=dict(prefix='Time: ', suffix=' s', visible=True,
+                              font=dict(size=14)),
+            pad=dict(t=10, b=10),
+            x=0.0, y=-0.05, len=1.0,
+            steps=slider_steps_anim
+        )]
+    )
+    st.plotly_chart(fig_anim, use_container_width=True)
