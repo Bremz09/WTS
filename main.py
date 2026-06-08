@@ -38,6 +38,14 @@ if len(set(rider_names)) < 3:
     st.stop()
 rider_defaults = [RIDER_SPECS[n] for n in rider_names]
 
+# Apply any pending gear overrides queued by "Use these gears" before widgets are created.
+_pending = st.session_state.pop("pending_gears", None)
+if _pending:
+    for kn, name, cr, sp in _pending:
+        if name == rider_names[int(kn) - 1]:
+            st.session_state[f"{kn}_{name}_8"] = int(sp)
+            st.session_state[f"{kn}_{name}_9"] = int(cr)
+
 def rider_inputs(name, kn, d):
     st.subheader(f"{name} specs")
     pfx = f"{kn}_{name}"
@@ -79,7 +87,17 @@ with st.form("my_form"):
     r1 = rider_inputs(rider_names[0], "1", rider_defaults[0])
     r2 = rider_inputs(rider_names[1], "2", rider_defaults[1])
     r3 = rider_inputs(rider_names[2], "3", rider_defaults[2])
-    submitted = st.form_submit_button("Update Specs")
+    bc1, bc2 = st.columns(2)
+    submitted = bc1.form_submit_button("Update Specs")
+    optimize = bc2.form_submit_button("Calculate Optimal Gears")
+
+opt_c1, opt_c2 = st.columns(2)
+opt_span = opt_c1.number_input("Span:", min_value=0.1, max_value=10.0, value=2.0, step=0.1, key="opt_span")
+_MAX_COMBOS = 5000
+_max_n = int(_MAX_COMBOS ** (1 / 3))  # max values per rider so n^3 <= cap
+_min_inc = math.ceil((2 * opt_span / (_max_n - 1)) * 100) / 100
+opt_inc = opt_c2.number_input("Increment:", min_value=_min_inc, max_value=float(2 * opt_span),
+                              value=max(_min_inc, 0.5), step=0.05, format="%.2f", key="opt_inc")
 
 (seat_max_RPM_1, seat_max_torque_1, seat_CdA_1, stand_max_RPM_1, stand_max_torque_1, stand_CdA_1, total_mass_1, sprocket_1, chainring_1, seat_height_1, stand_fatigue_rate_1, seat_fatigue_rate_1) = r1
 (seat_max_RPM_2, seat_max_torque_2, seat_CdA_2, stand_max_RPM_2, stand_max_torque_2, stand_CdA_2, total_mass_2, sprocket_2, chainring_2, seat_height_2, stand_fatigue_rate_2, seat_fatigue_rate_2) = r2
@@ -276,7 +294,7 @@ def _run_sim(r1t, r2t, r3t,
                     p2.T_max_seat -= p2.seat_fatigue_rate * increment
                     p2.torque = max(0.0, p2.T_max_seat + p2.seat_TC_slope * p2.cadence)
                 update_forces(p2, cda)
-                if p2.gap > 0.2:
+                if p2.gap > 0.0:
                     reduction_pct = max(0.0, -8.1136 * p2.gap + 50.051)
                     p2.aero_drag *= (100 - reduction_pct) / 100
                     p2.accel = (p2.prop_force - (p2.rr + p2.aero_drag)) / p2.total_mass
@@ -319,7 +337,7 @@ def _run_sim(r1t, r2t, r3t,
                     p3.torque = max(0.0, p3.T_max_seat + p3.seat_TC_slope * p3.cadence)
                 update_forces(p3, cda)
                 p3.dem_sup = p3.power_demand / p3.power_usable if p3.power_usable > p3.power_demand else 1
-                if p3.gap > 0.2:
+                if p3.gap > 0.0:
                     reduction_pct = max(0.0, -8.1136 * p3.gap + 50.051)
                     p3.aero_drag *= (100 - reduction_pct) / 100
                     p3.accel = (p3.prop_force - (p3.rr + p3.aero_drag)) / p3.total_mass
@@ -333,6 +351,103 @@ df_p1, df_p2, df_p3 = _run_sim(
     air_density, dist_at_sit, fatigue_onset,
     straight_bank_angle, bend_bank_angle, pl_to_trans, transition_length
 )
+
+if optimize:
+    def _gear_range(g):
+        return np.round(np.arange(g - opt_span, g + opt_span + opt_inc * 0.5, opt_inc), 4)
+
+    g1_base = 27 * r1[8] / r1[7]
+    g2_base = 27 * r2[8] / r2[7]
+    g3_base = 27 * r3[8] / r3[7]
+    g1s, g2s, g3s = _gear_range(g1_base), _gear_range(g2_base), _gear_range(g3_base)
+    total = len(g1s) * len(g2s) * len(g3s)
+
+    if total > _MAX_COMBOS:
+        st.error(f"{total} combinations exceeds cap of {_MAX_COMBOS}. Increase Increment or reduce Span.")
+    else:
+        # Override gear by setting sprocket=27, chainring=gear → _make_athlete computes gear = 27*chainring/sprocket = gear
+        def _spec_with_gear(spec, gear):
+            return (*spec[:7], 27, float(gear), *spec[9:])
+
+        progress = st.progress(0.0, text=f"Running {total} simulations...")
+        results = []
+        done = 0
+        for g1 in g1s:
+            r1_mod = _spec_with_gear(r1, g1)
+            for g2 in g2s:
+                r2_mod = _spec_with_gear(r2, g2)
+                for g3 in g3s:
+                    r3_mod = _spec_with_gear(r3, g3)
+                    df1, df2, df3 = _run_sim(
+                        r1_mod, r2_mod, r3_mod,
+                        air_density, dist_at_sit, fatigue_onset,
+                        straight_bank_angle, bend_bank_angle, pl_to_trans, transition_length
+                    )
+                    t1 = float(np.interp(250, df1['wheel_dist'].values, df1['Time'].values))
+                    t2 = float(np.interp(500, df2['wheel_dist'].values, df2['Time'].values))
+                    t3 = float(np.interp(750, df3['wheel_dist'].values, df3['Time'].values))
+                    results.append((float(g1), float(g2), float(g3), t1, t2, t3))
+                    done += 1
+                    if done % 25 == 0 or done == total:
+                        progress.progress(done / total, text=f"{done}/{total}")
+        progress.empty()
+
+        df_opt = pd.DataFrame(results, columns=["P1 gear", "P2 gear", "P3 gear",
+                                                 "P1 250m (s)", "P2 500m (s)", "P3 750m (s)"])
+        df_opt = df_opt.sort_values("P3 750m (s)").head(10).reset_index(drop=True)
+        st.session_state["opt_results"] = {
+            "df": df_opt,
+            "total": int(total),
+            "rider_names": list(rider_names),
+        }
+
+if "opt_results" in st.session_state:
+    _opt = st.session_state["opt_results"]
+    df_opt = _opt["df"]
+    _opt_names = _opt["rider_names"]
+
+    # Pre-compute lookup of all physical (chainring, sprocket) -> gear
+    _PHYS_COMBOS = [(cr, sp, 27 * cr / sp) for cr in range(40, 101) for sp in range(12, 23)]
+
+    def _closest_combo(target):
+        cr, sp, g = min(_PHYS_COMBOS, key=lambda x: abs(x[2] - target))
+        return cr, sp, g
+
+    with st.expander(f"Optimal gear results — top 10 of {_opt['total']} combos", expanded=True):
+        st.dataframe(
+            df_opt.style.format({
+                "P1 gear": "{:.2f}", "P2 gear": "{:.2f}", "P3 gear": "{:.2f}",
+                "P1 250m (s)": "{:.3f}", "P2 500m (s)": "{:.3f}", "P3 750m (s)": "{:.3f}",
+            }),
+            use_container_width=False,
+        )
+
+        st.subheader("Closest possible gear (best result)")
+        best = df_opt.iloc[0]
+        closest = [_closest_combo(best[f"{pos} gear"]) for pos in ("P1", "P2", "P3")]
+        df_closest = pd.DataFrame(
+            [
+                {
+                    "Position": pos,
+                    "Rider": _opt_names[i],
+                    "Target gear": round(float(best[f"{pos} gear"]), 3),
+                    "Chainring": cr,
+                    "Sprocket": sp,
+                    "Actual gear": round(g, 3),
+                    "Delta": round(g - float(best[f"{pos} gear"]), 3),
+                }
+                for i, (pos, (cr, sp, g)) in enumerate(zip(("P1", "P2", "P3"), closest))
+            ]
+        ).set_index("Position")
+        st.dataframe(df_closest, use_container_width=False)
+
+        if st.button("Use these gears", key="apply_opt_gears"):
+            st.session_state["pending_gears"] = [
+                (kn, name, int(cr), int(sp))
+                for kn, name, (cr, sp, _g) in zip(("1", "2", "3"), _opt_names, closest)
+            ]
+            del st.session_state["opt_results"]
+            st.rerun()
 
 fig_dem_v_supp = px.line(df_p3, x="Time", y=[df_p3["dem_sup"], df_p3["COM_speed"], df_p3["gap"]])
 # st.plotly_chart(fig_dem_v_supp, use_container_width=True)
@@ -415,6 +530,19 @@ df_power = make_summary_df('power_usable', 'Power', dp=0)
 styled_power = df_power.replace(0, np.nan).style.background_gradient(axis=1, cmap='RdYlGn').format("{:.0f}", na_rep="")
 st.subheader("Power (W)")
 st.dataframe(styled_power, use_container_width=False)
+
+for _df in (df_p1, df_p2, df_p3):
+    _df['apparent_cda'] = _df['aero_drag'] / (0.5 * air_density * _df['COM_speed'] ** 2)
+
+df_cda = make_summary_df('apparent_cda', 'Apparent CdA', dp=4)
+styled_cda = df_cda.replace(0, np.nan).style.background_gradient(axis=1, cmap='RdYlGn_r').format("{:.4f}", na_rep="")
+st.subheader("Apparent CdA")
+st.dataframe(styled_cda, use_container_width=False)
+
+df_aero = make_summary_df('aero_drag', 'Aero Drag', dp=1)
+styled_aero = df_aero.replace(0, np.nan).style.background_gradient(axis=1, cmap='RdYlGn_r').format("{:.1f}", na_rep="")
+st.subheader("Aero Drag (N)")
+st.dataframe(styled_aero, use_container_width=False)
 
 # --- CSV export ---
 combined_csv = pd.concat([
